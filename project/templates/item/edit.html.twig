@@ -1,0 +1,141 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'item.edit'|trans }}: {{ item.customId }} - {{ parent() }}{% endblock %}
+
+{% block body %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('inventory_show', {id: inventory.id}) }}">{{ inventory.title }}</a></li>
+        <li class="breadcrumb-item active">{{ item.customId }}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>{{ 'item.edit'|trans }}</span>
+                <span class="text-muted" id="saveStatus">
+                    <i class="bi bi-check-circle text-success"></i> Saved
+                </span>
+            </div>
+            <div class="card-body">
+                <!-- Custom ID -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">{{ 'item.custom_id'|trans }}</label>
+                    <input type="text" class="form-control" id="customId" value="{{ item.customId }}">
+                    <small class="text-muted">Edit with caution. Must be unique within this inventory.</small>
+                </div>
+                
+                <hr>
+                
+                <!-- Dynamic Custom Fields -->
+                {% for field in inventory.customFieldConfig %}
+                    {% set value = item.getFieldValue(field.key) %}
+                    <div class="mb-3">
+                        <label class="form-label" title="{{ field.description }}">
+                            {{ field.name }}
+                            {% if field.description %}
+                            <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip" title="{{ field.description }}"></i>
+                            {% endif %}
+                        </label>
+                        
+                        {% if field.type == 'string' %}
+                            <input type="text" class="form-control" data-field="{{ field.key }}" value="{{ value }}">
+                        
+                        {% elseif field.type == 'text' %}
+                            <textarea class="form-control" data-field="{{ field.key }}" rows="4">{{ value }}</textarea>
+                        
+                        {% elseif field.type == 'number' %}
+                            <input type="number" class="form-control" data-field="{{ field.key }}" value="{{ value }}" step="any">
+                        
+                        {% elseif field.type == 'link' %}
+                            <input type="url" class="form-control" data-field="{{ field.key }}" value="{{ value }}" placeholder="https://...">
+                        
+                        {% elseif field.type == 'bool' %}
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" data-field="{{ field.key }}" {{ value ? 'checked' : '' }}>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ path('inventory_show', {id: inventory.id}) }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>{{ 'common.back'|trans }}
+                    </a>
+                    <button class="btn btn-primary" onclick="saveItem()">
+                        <i class="bi bi-check-lg me-1"></i>{{ 'common.save'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const itemId = {{ item.id }};
+const inventoryId = {{ inventory.id }};
+let currentVersion = {{ item.version }};
+
+// Initialize tooltips
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+    new bootstrap.Tooltip(el);
+});
+
+async function saveItem() {
+    const data = {
+        version: currentVersion,
+        customId: document.getElementById('customId').value
+    };
+    
+    document.querySelectorAll('[data-field]').forEach(el => {
+        const key = el.dataset.field;
+        if (el.type === 'checkbox') {
+            data[key] = el.checked;
+        } else if (el.type === 'number') {
+            data[key] = el.value ? parseFloat(el.value) : null;
+        } else {
+            data[key] = el.value || null;
+        }
+    });
+    
+    document.getElementById('saveStatus').innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Saving...';
+    
+    try {
+        const res = await fetch(`/inventory/${inventoryId}/item/${itemId}/save`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+            currentVersion = result.version;
+            document.getElementById('saveStatus').innerHTML = '<i class="bi bi-check-circle text-success"></i> Saved';
+        } else if (result.error === 'version_conflict') {
+            alert('{{ 'error.version_conflict'|trans }}');
+            location.reload();
+        } else if (result.error === 'duplicate_id') {
+            alert(result.message);
+            document.getElementById('saveStatus').innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i> Error';
+        }
+    } catch (e) {
+        document.getElementById('saveStatus').innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i> Error';
+    }
+}
+</script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.spin {
+    animation: spin 1s linear infinite;
+}
+</style>
+{% endblock %}

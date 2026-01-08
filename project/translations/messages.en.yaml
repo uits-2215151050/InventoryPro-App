@@ -1,0 +1,163 @@
+# Navigation
+nav:
+    login: "Sign in"
+    logout: "Sign out"
+    admin: "Admin"
+    toggle_theme: "Toggle theme"
+
+# Login
+login:
+    title: "Sign In"
+    welcome: "Welcome Back"
+    subtitle: "Sign in to manage your inventories"
+    google: "Continue with Google"
+    note: "By signing in, you agree to our terms of service."
+
+# Search
+search:
+    placeholder: "Search inventories and items..."
+    title: "Search Results"
+    no_results: "No results found for"
+    inventories: "Inventories"
+    items: "Items"
+
+# Home
+home:
+    title: "Dashboard"
+    latest: "Latest Inventories"
+    popular: "Most Popular"
+    tags: "Browse by Tags"
+    create: "Create Inventory"
+    no_inventories: "No inventories yet. Be the first to create one!"
+
+# Profile
+profile:
+    title: "My Profile"
+    my_inventories: "My Inventories"
+    shared_with_me: "Shared with Me"
+    create_new: "Create New Inventory"
+    no_owned: "You haven't created any inventories yet."
+    no_shared: "No inventories have been shared with you."
+
+# Inventory
+inventory:
+    title: "Inventory"
+    items: "Items"
+    discussion: "Discussion"
+    settings: "Settings"
+    custom_id: "Custom ID Format"
+    access: "Access Control"
+    fields: "Custom Fields"
+    statistics: "Statistics"
+    save: "Save"
+    saved: "Saved"
+    saving: "Saving..."
+    delete: "Delete"
+    edit: "Edit"
+    view: "View"
+    add_item: "Add Item"
+    public: "Public"
+    private: "Private"
+    created_by: "Created by"
+    items_count: "items"
+
+# Item
+item:
+    add: "Add Item"
+    edit: "Edit Item"
+    delete: "Delete Item"
+    created_at: "Created"
+    updated_at: "Updated"
+    custom_id: "ID"
+    likes: "likes"
+    like: "Like"
+    unlike: "Unlike"
+
+# Fields
+field:
+    string: "Text"
+    text: "Multi-line Text"
+    number: "Number"
+    link: "Link"
+    bool: "Checkbox"
+    name: "Field Name"
+    description: "Description (tooltip)"
+    show_in_table: "Show in table"
+    add: "Add Field"
+    remove: "Remove Field"
+
+# Custom ID
+custom_id:
+    elements: "ID Elements"
+    preview: "Preview"
+    static_text: "Static Text"
+    random_20bit: "20-bit Random"
+    random_32bit: "32-bit Random"
+    random_6digit: "6-digit Random"
+    random_9digit: "9-digit Random"
+    guid: "GUID"
+    datetime: "Date/Time"
+    sequence: "Sequence"
+    drag_hint: "Drag elements to reorder. Drag outside to remove."
+    format_options: "Format Options"
+    leading_zeros: "Leading zeros"
+
+# Admin
+admin:
+    title: "Admin Panel"
+    users: "User Management"
+    block: "Block"
+    unblock: "Unblock"
+    delete: "Delete"
+    make_admin: "Make Admin"
+    remove_admin: "Remove Admin"
+    confirm_delete: "Are you sure you want to delete this user?"
+    confirm_block: "Are you sure you want to block this user?"
+
+# Comments
+comment:
+    add: "Add Comment"
+    placeholder: "Write a comment... (Markdown supported)"
+    submit: "Post"
+
+# Access
+access:
+    users: "Allowed Users"
+    add_user: "Add user by email or name..."
+    remove: "Remove"
+    sort_by_name: "Sort by Name"
+    sort_by_email: "Sort by Email"
+
+# Statistics
+stats:
+    total_items: "Total Items"
+    avg: "Average"
+    min: "Minimum"
+    max: "Maximum"
+    frequent: "Most Frequent"
+
+# Common
+common:
+    save: "Save"
+    cancel: "Cancel"
+    delete: "Delete"
+    edit: "Edit"
+    view: "View"
+    back: "Back"
+    loading: "Loading..."
+    confirm: "Confirm"
+    yes: "Yes"
+    no: "No"
+    actions: "Actions"
+    select_all: "Select All"
+    selected: "selected"
+
+# Footer
+footer:
+    rights: "All rights reserved."
+
+# Errors
+error:
+    not_found: "Page not found"
+    access_denied: "Access denied"
+    version_conflict: "This record was modified by another user. Please refresh and try again."

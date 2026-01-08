@@ -1,0 +1,163 @@
+# Navigation
+nav:
+    login: "Kirish"
+    logout: "Chiqish"
+    admin: "Admin"
+    toggle_theme: "Mavzuni o'zgartirish"
+
+# Login
+login:
+    title: "Kirish"
+    welcome: "Xush kelibsiz"
+    subtitle: "Inventarlaringizni boshqarish uchun tizimga kiring"
+    google: "Google orqali davom eting"
+    note: "Kirish orqali siz xizmat shartlariga rozilik bildirasiz."
+
+# Search
+search:
+    placeholder: "Inventar va elementlarni qidirish..."
+    title: "Qidiruv natijalari"
+    no_results: "Topilmadi:"
+    inventories: "Inventarlar"
+    items: "Elementlar"
+
+# Home
+home:
+    title: "Bosh sahifa"
+    latest: "So'nggi inventarlar"
+    popular: "Eng mashhur"
+    tags: "Teglar bo'yicha ko'rish"
+    create: "Inventar yaratish"
+    no_inventories: "Hali inventarlar yo'q. Birinchi bo'lib yarating!"
+
+# Profile
+profile:
+    title: "Mening profilim"
+    my_inventories: "Mening inventarlarim"
+    shared_with_me: "Men bilan ulashilgan"
+    create_new: "Yangi inventar yaratish"
+    no_owned: "Siz hali hech qanday inventar yaratmagansiz."
+    no_shared: "Siz bilan hali hech qanday inventar ulashilmagan."
+
+# Inventory
+inventory:
+    title: "Inventar"
+    items: "Elementlar"
+    discussion: "Muhokama"
+    settings: "Sozlamalar"
+    custom_id: "Maxsus ID formati"
+    access: "Kirish nazorati"
+    fields: "Maxsus maydonlar"
+    statistics: "Statistika"
+    save: "Saqlash"
+    saved: "Saqlandi"
+    saving: "Saqlanmoqda..."
+    delete: "O'chirish"
+    edit: "Tahrirlash"
+    view: "Ko'rish"
+    add_item: "Element qo'shish"
+    public: "Ommaviy"
+    private: "Shaxsiy"
+    created_by: "Yaratuvchi"
+    items_count: "elementlar"
+
+# Item
+item:
+    add: "Element qo'shish"
+    edit: "Elementni tahrirlash"
+    delete: "Elementni o'chirish"
+    created_at: "Yaratilgan"
+    updated_at: "Yangilangan"
+    custom_id: "ID"
+    likes: "yoqtirishlar"
+    like: "Yoqtirish"
+    unlike: "Yoqtirmaslik"
+
+# Fields
+field:
+    string: "Matn"
+    text: "Ko'p qatorli matn"
+    number: "Raqam"
+    link: "Havola"
+    bool: "Belgilash katagi"
+    name: "Maydon nomi"
+    description: "Tavsif (maslahat)"
+    show_in_table: "Jadvalda ko'rsatish"
+    add: "Maydon qo'shish"
+    remove: "Maydonni olib tashlash"
+
+# Custom ID
+custom_id:
+    elements: "ID elementlari"
+    preview: "Ko'rib chiqish"
+    static_text: "Statik matn"
+    random_20bit: "20-bitli tasodifiy"
+    random_32bit: "32-bitli tasodifiy"
+    random_6digit: "6-raqamli tasodifiy"
+    random_9digit: "9-raqamli tasodifiy"
+    guid: "GUID"
+    datetime: "Sana/Vaqt"
+    sequence: "Ketma-ketlik"
+    drag_hint: "Tartibni o'zgartirish uchun torting. O'chirish uchun tashqariga torting."
+    format_options: "Format sozlamalari"
+    leading_zeros: "Oldingi nollar"
+
+# Admin
+admin:
+    title: "Admin paneli"
+    users: "Foydalanuvchilarni boshqarish"
+    block: "Bloklash"
+    unblock: "Blokdan chiqarish"
+    delete: "O'chirish"
+    make_admin: "Admin qilish"
+    remove_admin: "Adminlikni olib tashlash"
+    confirm_delete: "Haqiqatan ham bu foydalanuvchini o'chirmoqchimisiz?"
+    confirm_block: "Haqiqatan ham bu foydalanuvchini bloklashni xohlaysizmi?"
+
+# Comments
+comment:
+    add: "Izoh qo'shish"
+    placeholder: "Izoh yozing... (Markdown qo'llab-quvvatlanadi)"
+    submit: "Yuborish"
+
+# Access
+access:
+    users: "Ruxsat berilgan foydalanuvchilar"
+    add_user: "Email yoki ism bo'yicha foydalanuvchi qo'shing..."
+    remove: "Olib tashlash"
+    sort_by_name: "Ism bo'yicha tartiblash"
+    sort_by_email: "Email bo'yicha tartiblash"
+
+# Statistics
+stats:
+    total_items: "Jami elementlar"
+    avg: "O'rtacha"
+    min: "Minimal"
+    max: "Maksimal"
+    frequent: "Eng ko'p ishlatiladigan"
+
+# Common
+common:
+    save: "Saqlash"
+    cancel: "Bekor qilish"
+    delete: "O'chirish"
+    edit: "Tahrirlash"
+    view: "Ko'rish"
+    back: "Orqaga"
+    loading: "Yuklanmoqda..."
+    confirm: "Tasdiqlash"
+    yes: "Ha"
+    no: "Yo'q"
+    actions: "Harakatlar"
+    select_all: "Hammasini tanlash"
+    selected: "tanlangan"
+
+# Footer
+footer:
+    rights: "Barcha huquqlar himoyalangan."
+
+# Errors
+error:
+    not_found: "Sahifa topilmadi"
+    access_denied: "Kirish taqiqlangan"
+    version_conflict: "Bu yozuv boshqa foydalanuvchi tomonidan o'zgartirildi. Iltimos, yangilang va qaytadan urinib ko'ring."

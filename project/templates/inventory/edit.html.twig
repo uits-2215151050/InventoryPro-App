@@ -1,0 +1,560 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'inventory.edit'|trans }}: {{ inventory.title }} - {{ parent() }}{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .save-indicator {
+        transition: opacity 0.3s;
+    }
+    .field-card {
+        cursor: grab;
+    }
+    .field-card:active {
+        cursor: grabbing;
+    }
+    .id-element {
+        cursor: grab;
+        user-select: none;
+    }
+    .id-element:active {
+        cursor: grabbing;
+    }
+    .dropzone {
+        min-height: 60px;
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.2s;
+    }
+    .dropzone.dragover {
+        border-color: #667eea;
+        background-color: rgba(102, 126, 234, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{{ path('inventory_show', {id: inventory.id}) }}" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="bi bi-arrow-left"></i> {{ 'common.back'|trans }}
+        </a>
+        <span class="h4">{{ 'inventory.settings'|trans }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="save-indicator text-muted" id="saveIndicator">
+            <i class="bi bi-check-circle text-success"></i> {{ 'inventory.saved'|trans }}
+        </span>
+        <form action="{{ path('inventory_delete', {id: inventory.id}) }}" method="POST" 
+              onsubmit="return confirm('Are you sure?')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash"></i> {{ 'inventory.delete'|trans }}
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#settings">
+            <i class="bi bi-gear me-1"></i>{{ 'inventory.settings'|trans }}
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#customId">
+            <i class="bi bi-hash me-1"></i>{{ 'inventory.custom_id'|trans }}
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fields">
+            <i class="bi bi-ui-checks me-1"></i>{{ 'inventory.fields'|trans }}
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">
+            <i class="bi bi-people me-1"></i>{{ 'inventory.access'|trans }}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- General Settings Tab -->
+    <div class="tab-pane fade show active" id="settings">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" value="{{ inventory.title }}" data-autosave>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description (Markdown)</label>
+                            <textarea class="form-control" id="description" rows="5" data-autosave>{{ inventory.description }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="categoryId" data-autosave>
+                                <option value="">-- Select --</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {{ inventory.category and inventory.category.id == category.id ? 'selected' : '' }}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Image URL</label>
+                            <input type="url" class="form-control" id="imageUrl" value="{{ inventory.imageUrl }}" 
+                                   placeholder="https://example.com/image.jpg" data-autosave>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="tagsInput" 
+                                   value="{{ inventory.tags|map(t => t.name)|join(', ') }}"
+                                   placeholder="Enter tags separated by commas" data-autosave>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isPublic" 
+                                   {{ inventory.isPublic ? 'checked' : '' }} data-autosave>
+                            <label class="form-check-label" for="isPublic">
+                                {{ 'inventory.public'|trans }} - Allow all authenticated users to add items
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                {% if inventory.imageUrl %}
+                <div class="card">
+                    <img src="{{ inventory.imageUrl }}" class="card-img-top" alt="Preview">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom ID Tab -->
+    <div class="tab-pane fade" id="customId">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">{{ 'custom_id.elements'|trans }}</div>
+                    <div class="card-body">
+                        <p class="text-muted small">{{ 'custom_id.drag_hint'|trans }}</p>
+                        
+                        <!-- Available Elements -->
+                        <div class="mb-3">
+                            <strong>Available Elements:</strong>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <span class="badge bg-secondary id-element" draggable="true" data-type="static">{{ 'custom_id.static_text'|trans }}</span>
+                                <span class="badge bg-primary id-element" draggable="true" data-type="random_20bit">{{ 'custom_id.random_20bit'|trans }}</span>
+                                <span class="badge bg-primary id-element" draggable="true" data-type="random_32bit">{{ 'custom_id.random_32bit'|trans }}</span>
+                                <span class="badge bg-primary id-element" draggable="true" data-type="random_6digit">{{ 'custom_id.random_6digit'|trans }}</span>
+                                <span class="badge bg-primary id-element" draggable="true" data-type="random_9digit">{{ 'custom_id.random_9digit'|trans }}</span>
+                                <span class="badge bg-info id-element" draggable="true" data-type="guid">{{ 'custom_id.guid'|trans }}</span>
+                                <span class="badge bg-success id-element" draggable="true" data-type="datetime">{{ 'custom_id.datetime'|trans }}</span>
+                                <span class="badge bg-warning text-dark id-element" draggable="true" data-type="sequence">{{ 'custom_id.sequence'|trans }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- ID Format Builder -->
+                        <div class="dropzone" id="idFormatDropzone">
+                            <!-- Existing elements will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">{{ 'custom_id.preview'|trans }}</div>
+                    <div class="card-body">
+                        <code id="idPreview" class="fs-5">{{ inventory.customIdFormat ? 'Loading...' : 'No format defined' }}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Fields Tab -->
+    <div class="tab-pane fade" id="fields">
+        <div class="row g-4">
+            {% set fieldTypes = [
+                {type: 'String', icon: 'type', max: 3},
+                {type: 'Text', icon: 'text-paragraph', max: 3},
+                {type: 'Number', icon: 'hash', max: 3},
+                {type: 'Link', icon: 'link-45deg', max: 3},
+                {type: 'Bool', icon: 'toggle-on', max: 3}
+            ] %}
+            
+            {% for ft in fieldTypes %}
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-{{ ft.icon }} me-2"></i>{{ ('field.' ~ ft.type|lower)|trans }} (max {{ ft.max }})
+                    </div>
+                    <div class="card-body">
+                        {% for i in 1..ft.max %}
+                            {% set prefix = 'custom' ~ ft.type ~ i %}
+                            {% set stateGetter = 'isCustom' ~ ft.type ~ i ~ 'State' %}
+                            {% set nameGetter = 'getCustom' ~ ft.type ~ i ~ 'Name' %}
+                            {% set descGetter = 'getCustom' ~ ft.type ~ i ~ 'Description' %}
+                            {% set showGetter = 'isCustom' ~ ft.type ~ i ~ 'ShowInTable' %}
+                            
+                            <div class="field-item mb-3 p-2 border rounded" data-field="{{ prefix }}">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="{{ prefix }}State" 
+                                           {{ attribute(inventory, stateGetter) ? 'checked' : '' }} data-autosave>
+                                    <label class="form-check-label fw-bold" for="{{ prefix }}State">
+                                        Field {{ i }}
+                                    </label>
+                                </div>
+                                <div class="field-details" style="{{ attribute(inventory, stateGetter) ? '' : 'display:none' }}">
+                                    <input type="text" class="form-control form-control-sm mb-2" 
+                                           id="{{ prefix }}Name" value="{{ attribute(inventory, nameGetter) }}"
+                                           placeholder="{{ 'field.name'|trans }}" data-autosave>
+                                    <input type="text" class="form-control form-control-sm mb-2"
+                                           id="{{ prefix }}Description" value="{{ attribute(inventory, descGetter) }}"
+                                           placeholder="{{ 'field.description'|trans }}" data-autosave>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="{{ prefix }}ShowInTable"
+                                               {{ attribute(inventory, showGetter) ? 'checked' : '' }} data-autosave>
+                                        <label class="form-check-label small" for="{{ prefix }}ShowInTable">
+                                            {{ 'field.show_in_table'|trans }}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Access Control Tab -->
+    <div class="tab-pane fade" id="access">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>{{ 'access.users'|trans }}</span>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary active" id="sortByName">{{ 'access.sort_by_name'|trans }}</button>
+                    <button class="btn btn-outline-secondary" id="sortByEmail">{{ 'access.sort_by_email'|trans }}</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="userSearch" 
+                           placeholder="{{ 'access.add_user'|trans }}" autocomplete="off">
+                    <div id="userSearchResults" class="list-group mt-1" style="display:none;"></div>
+                </div>
+                
+                <div id="writersList">
+                    {% for writer in inventory.writers %}
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom" data-user-id="{{ writer.id }}">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ writer.avatarUrl ?? 'https://via.placeholder.com/32' }}" 
+                                 class="rounded-circle me-2" width="32" height="32" alt="">
+                            <div>
+                                <strong>{{ writer.name ?? '-' }}</strong>
+                                <br><small class="text-muted">{{ writer.email }}</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" onclick="removeWriter({{ writer.id }})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No specific users added. {% if inventory.isPublic %}This inventory is public.{% endif %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const inventoryId = {{ inventory.id }};
+let currentVersion = {{ inventory.version }};
+let saveTimeout = null;
+let pendingChanges = {};
+
+// Auto-save functionality
+document.querySelectorAll('[data-autosave]').forEach(el => {
+    el.addEventListener('input', () => scheduleAutoSave());
+    el.addEventListener('change', () => scheduleAutoSave());
+});
+
+function scheduleAutoSave() {
+    document.getElementById('saveIndicator').innerHTML = '<i class="bi bi-arrow-repeat spin"></i> {{ 'inventory.saving'|trans }}';
+    
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(autoSave, 7000); // Save after 7 seconds of no changes
+}
+
+// Custom ID Drag and Drop
+const idFormatDropzone = document.getElementById('idFormatDropzone');
+const idPreview = document.getElementById('idPreview');
+let idFormat = {{ inventory.customIdFormat|json_encode|raw }} || [];
+
+function renderIdFormat() {
+    idFormatDropzone.innerHTML = '';
+    if (idFormat.length === 0) {
+        idFormatDropzone.innerHTML = '<p class="text-muted text-center my-2 placeholder-text">{{ 'custom_id.drag_hint'|trans }}</p>';
+    }
+    
+    idFormat.forEach((element, index) => {
+        const span = document.createElement('span');
+        span.className = `badge bg-${getTypeColor(element.type)} m-1 fs-6 cursor-grab`;
+        span.draggable = true;
+        span.dataset.index = index;
+        span.innerHTML = `
+            ${getElementLabel(element.type)}
+            ${element.type === 'static' ? `: ${element.value}` : ''}
+            <i class="bi bi-x ms-2 cursor-pointer" onclick="removeIdElement(${index})"></i>
+        `;
+        
+        span.addEventListener('dragstart', handleSortStart);
+        span.addEventListener('dragover', handleSortOver);
+        span.addEventListener('drop', handleSortDrop);
+        
+        idFormatDropzone.appendChild(span);
+    });
+    
+    updateIdPreview();
+}
+
+function getTypeColor(type) {
+    const colors = {
+        'static': 'secondary',
+        'random_20bit': 'primary',
+        'random_32bit': 'primary',
+        'random_6digit': 'primary',
+        'random_9digit': 'primary',
+        'guid': 'info',
+        'datetime': 'success',
+        'sequence': 'warning text-dark'
+    };
+    return colors[type] || 'secondary';
+}
+
+function getElementLabel(type) {
+    // This maps types to translation keys or readable labels
+    // For simplicity using hardcoded mapping matching translation keys from twig
+    const labels = {
+        'static': '{{ 'custom_id.static_text'|trans }}',
+        'random_20bit': '{{ 'custom_id.random_20bit'|trans }}',
+        'random_32bit': '{{ 'custom_id.random_32bit'|trans }}',
+        'random_6digit': '{{ 'custom_id.random_6digit'|trans }}',
+        'random_9digit': '{{ 'custom_id.random_9digit'|trans }}',
+        'guid': '{{ 'custom_id.guid'|trans }}',
+        'datetime': '{{ 'custom_id.datetime'|trans }}',
+        'sequence': '{{ 'custom_id.sequence'|trans }}'
+    };
+    return labels[type] || type;
+}
+
+// Drag from toolbar
+document.querySelectorAll('.id-element').forEach(el => {
+    el.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('type', e.target.dataset.type);
+        e.dataTransfer.setData('source', 'toolbar');
+    });
+});
+
+idFormatDropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    idFormatDropzone.classList.add('dragover');
+});
+
+idFormatDropzone.addEventListener('dragleave', () => {
+    idFormatDropzone.classList.remove('dragover');
+});
+
+idFormatDropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    idFormatDropzone.classList.remove('dragover');
+    
+    const source = e.dataTransfer.getData('source');
+    if (source === 'toolbar') {
+        const type = e.dataTransfer.getData('type');
+        let value = '';
+        
+        if (type === 'static') {
+            value = prompt('Enter static text (e.g., prefix-):');
+            if (value === null) return; // Cancelled
+        }
+        
+        idFormat.push({ type, value, options: {} });
+        renderIdFormat();
+        scheduleAutoSave();
+    }
+});
+
+// Sorting logic
+let draggedIndex = null;
+
+function handleSortStart(e) {
+    draggedIndex = parseInt(e.target.dataset.index);
+    e.dataTransfer.setData('source', 'sort');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleSortOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleSortDrop(e) {
+    e.preventDefault();
+    const source = e.dataTransfer.getData('source');
+    if (source !== 'sort') return;
+    
+    const targetIndex = parseInt(e.currentTarget.dataset.index);
+    if (draggedIndex === targetIndex) return;
+    
+    const item = idFormat.splice(draggedIndex, 1)[0];
+    idFormat.splice(targetIndex, 0, item);
+    
+    renderIdFormat();
+    scheduleAutoSave();
+}
+
+// Global functions for inline events
+window.removeIdElement = function(index) {
+    idFormat.splice(index, 1);
+    renderIdFormat();
+    scheduleAutoSave();
+};
+
+async function updateIdPreview() {
+    // In a real app, this might call the backend. 
+    // For now, let's do a simple client-side preview or fetch from server via small API
+    // Let's assume we implement a client-side approximation for speed, or ignore it until save.
+    // Ideally we call the generator service.
+    idPreview.textContent = 'Preview updating...';
+    // We can rely on page reload or autosave + simple text feedback
+    // Better: let's leave it simple or implementation specific.
+    // Let's try to mock it client side for immediate feedback:
+    const parts = idFormat.map(el => {
+        if (el.type === 'static') return el.value;
+        if (el.type === 'sequence') return '001';
+        if (el.type.startsWith('random')) return 'ABCD';
+        if (el.type === 'datetime') return new Date().toISOString().slice(0,10);
+        return '???';
+    });
+    idPreview.textContent = parts.join('');
+}
+
+// Initial render
+renderIdFormat();
+
+// --- AUTOSAVE UPDATE ---
+async function autoSave() {
+    const data = {
+        version: currentVersion,
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        categoryId: document.getElementById('categoryId').value || null,
+        imageUrl: document.getElementById('imageUrl').value,
+        isPublic: document.getElementById('isPublic').checked,
+        tags: document.getElementById('tagsInput').value.split(',').map(t => t.trim()).filter(t => t),
+        customIdFormat: idFormat // Included format
+    };
+
+    // Add custom field states
+    ['String', 'Text', 'Number', 'Link', 'Bool'].forEach(type => {
+        for (let i = 1; i <= 3; i++) {
+            const prefix = 'custom' + type + i;
+            const stateEl = document.getElementById(prefix + 'State');
+            if (stateEl) {
+                data[prefix + 'State'] = stateEl.checked;
+                data[prefix + 'Name'] = document.getElementById(prefix + 'Name')?.value || '';
+                data[prefix + 'Description'] = document.getElementById(prefix + 'Description')?.value || '';
+                data[prefix + 'ShowInTable'] = document.getElementById(prefix + 'ShowInTable')?.checked || false;
+            }
+        }
+    });
+
+    try {
+        const res = await fetch(`/inventory/${inventoryId}/autosave`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+            currentVersion = result.version;
+            document.getElementById('saveIndicator').innerHTML = '<i class="bi bi-check-circle text-success"></i> {{ 'inventory.saved'|trans }}';
+        } else if (result.error === 'version_conflict') {
+            alert('{{ 'error.version_conflict'|trans }}');
+            location.reload();
+        }
+    } catch (e) {
+        document.getElementById('saveIndicator').innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i> Error';
+    }
+}
+
+// Toggle field details visibility
+document.querySelectorAll('[id$="State"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const details = this.closest('.field-item').querySelector('.field-details');
+        details.style.display = this.checked ? '' : 'none';
+    });
+});
+
+// User search for access control
+const userSearch = document.getElementById('userSearch');
+const userSearchResults = document.getElementById('userSearchResults');
+let searchTimeout;
+
+userSearch?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const q = this.value.trim();
+    
+    if (q.length < 2) {
+        userSearchResults.style.display = 'none';
+        return;
+    }
+    
+    searchTimeout = setTimeout(async () => {
+        const res = await fetch(`/admin/api/users/search?q=${encodeURIComponent(q)}`);
+        const users = await res.json();
+        
+        if (users.length > 0) {
+            userSearchResults.innerHTML = users.map(u => `
+                <button class="list-group-item list-group-item-action" onclick="addWriter(${u.id}, '${u.name || ''}', '${u.email}')">
+                    <strong>${u.name || '-'}</strong> <small class="text-muted">${u.email}</small>
+                </button>
+            `).join('');
+            userSearchResults.style.display = 'block';
+        } else {
+            userSearchResults.style.display = 'none';
+        }
+    }, 300);
+});
+
+async function addWriter(userId, name, email) {
+    await fetch(`/inventory/${inventoryId}/access`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'add', userId})
+    });
+    location.reload();
+}
+
+async function removeWriter(userId) {
+    await fetch(`/inventory/${inventoryId}/access`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: 'remove', userId})
+    });
+    document.querySelector(`[data-user-id="${userId}"]`).remove();
+}
+</script>
+{% endblock %}

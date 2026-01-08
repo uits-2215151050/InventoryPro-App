@@ -1,0 +1,285 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ inventory.title }} - {{ parent() }}{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">{{ inventory.title }}</h3>
+        <p class="text-muted mb-0">
+            <i class="bi bi-person me-1"></i>{{ inventory.creator.name ?? inventory.creator.email }}
+            <span class="mx-2">·</span>
+            {{ inventory.items|length }} {{ 'inventory.items_count'|trans }}
+            {% if inventory.isPublic %}
+            <span class="badge bg-success ms-2">{{ 'inventory.public'|trans }}</span>
+            {% endif %}
+        </p>
+    </div>
+    {% if can_edit %}
+    <a href="{{ path('inventory_edit', {id: inventory.id}) }}" class="btn btn-gradient">
+        <i class="bi bi-gear me-1"></i>{{ 'inventory.settings'|trans }}
+    </a>
+    {% endif %}
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#items">
+            <i class="bi bi-list-ul me-1"></i>{{ 'inventory.items'|trans }}
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#discussion">
+            <i class="bi bi-chat-dots me-1"></i>{{ 'inventory.discussion'|trans }}
+            <span class="badge bg-secondary ms-1">{{ comments|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#statistics">
+            <i class="bi bi-bar-chart me-1"></i>{{ 'inventory.statistics'|trans }}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Items Tab -->
+    <div class="tab-pane fade show active" id="items">
+        {% if can_write %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="btn-group" id="bulkActions" style="display: none;">
+                <button class="btn btn-outline-danger btn-sm" onclick="bulkDelete()">
+                    <i class="bi bi-trash me-1"></i>{{ 'common.delete'|trans }}
+                </button>
+            </div>
+            <a href="{{ path('item_new', {inventoryId: inventory.id}) }}" class="btn btn-primary btn-sm ms-auto">
+                <i class="bi bi-plus me-1"></i>{{ 'inventory.add_item'|trans }}
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            {% if can_write %}
+                            <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input" id="selectAllItems">
+                            </th>
+                            {% endif %}
+                            <th>{{ 'item.custom_id'|trans }}</th>
+                            {% for field in inventory.customFieldConfig %}
+                                {% if field.showInTable %}
+                                <th>{{ field.name }}</th>
+                                {% endif %}
+                            {% endfor %}
+                            <th>{{ 'item.likes'|trans }}</th>
+                            <th>{{ 'item.created_at'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr data-item-id="{{ item.id }}" onclick="if(!event.target.closest('input')) window.location='{{ path('item_show', {inventoryId: inventory.id, id: item.id}) }}'">
+                            {% if can_write %}
+                            <td onclick="event.stopPropagation()">
+                                <input type="checkbox" class="form-check-input item-checkbox" value="{{ item.id }}">
+                            </td>
+                            {% endif %}
+                            <td><code>{{ item.customId }}</code></td>
+                            {% for field in inventory.customFieldConfig %}
+                                {% if field.showInTable %}
+                                <td>
+                                    {% set value = item.getFieldValue(field.key) %}
+                                    {% if field.type == 'bool' %}
+                                        {% if value %}<i class="bi bi-check-lg text-success"></i>{% else %}<i class="bi bi-x text-muted"></i>{% endif %}
+                                    {% elseif field.type == 'link' and value %}
+                                        <a href="{{ value }}" target="_blank" onclick="event.stopPropagation()"><i class="bi bi-link-45deg"></i></a>
+                                    {% else %}
+                                        {{ value|slice(0, 50) }}{% if value|length > 50 %}...{% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            {% endfor %}
+                            <td>
+                                <span class="badge bg-danger bg-opacity-75">
+                                    <i class="bi bi-heart-fill me-1"></i>{{ item.likeCount }}
+                                </span>
+                            </td>
+                            <td class="text-muted small">{{ item.createdAt|date('Y-m-d') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                No items yet. {% if can_write %}Add the first one!{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discussion Tab -->
+    <div class="tab-pane fade" id="discussion">
+        <div class="card">
+            <div class="card-body">
+                <div id="commentsContainer">
+                    {% for comment in comments %}
+                    <div class="d-flex mb-3" data-comment-id="{{ comment.id }}">
+                        <img src="{{ comment.author.avatarUrl ?? 'https://via.placeholder.com/40' }}" 
+                             class="rounded-circle me-3" width="40" height="40" alt="">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between">
+                                <strong><a href="{{ path('app_profile') }}">{{ comment.author.name ?? comment.author.email }}</a></strong>
+                                <small class="text-muted">{{ comment.createdAt|date('Y-m-d H:i') }}</small>
+                            </div>
+                            <div class="mt-1">{{ comment.content|nl2br }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if app.user %}
+                <hr>
+                <form id="commentForm" class="d-flex gap-2">
+                    <textarea class="form-control" id="commentContent" rows="2" 
+                              placeholder="{{ 'comment.placeholder'|trans }}"></textarea>
+                    <button type="submit" class="btn btn-primary align-self-end">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <a href="{{ path('app_login') }}">Sign in</a> to join the discussion.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Tab -->
+    <div class="tab-pane fade" id="statistics">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h2 class="text-primary">{{ stats.itemCount }}</h2>
+                        <p class="text-muted mb-0">{{ 'stats.total_items'|trans }}</p>
+                    </div>
+                </div>
+            </div>
+            {% if stats.avgNumber1 is not null %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">{{ inventory.customNumber1Name ?? 'Number 1' }}</div>
+                    <div class="card-body">
+                        <p><strong>{{ 'stats.avg'|trans }}:</strong> {{ stats.avgNumber1|number_format(2) }}</p>
+                        <p><strong>{{ 'stats.min'|trans }}:</strong> {{ stats.minNumber1 }}</p>
+                        <p class="mb-0"><strong>{{ 'stats.max'|trans }}:</strong> {{ stats.maxNumber1 }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if stats.avgNumber2 is not null %}
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">{{ inventory.customNumber2Name ?? 'Number 2' }}</div>
+                    <div class="card-body">
+                        <p><strong>{{ 'stats.avg'|trans }}:</strong> {{ stats.avgNumber2|number_format(2) }}</p>
+                        <p><strong>{{ 'stats.min'|trans }}:</strong> {{ stats.minNumber2 }}</p>
+                        <p class="mb-0"><strong>{{ 'stats.max'|trans }}:</strong> {{ stats.maxNumber2 }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if can_write %}
+<script>
+// Select all items
+document.getElementById('selectAllItems')?.addEventListener('change', function() {
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+        cb.checked = this.checked;
+    });
+    updateBulkActions();
+});
+
+document.querySelectorAll('.item-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateBulkActions);
+});
+
+function updateBulkActions() {
+    const checked = document.querySelectorAll('.item-checkbox:checked').length;
+    document.getElementById('bulkActions').style.display = checked > 0 ? 'block' : 'none';
+}
+
+async function bulkDelete() {
+    if (!confirm('Delete selected items?')) return;
+    
+    const ids = [...document.querySelectorAll('.item-checkbox:checked')].map(cb => cb.value);
+    await fetch('{{ path('item_bulk_delete', {inventoryId: inventory.id}) }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ids})
+    });
+    location.reload();
+}
+</script>
+{% endif %}
+
+{% if app.user %}
+<script>
+// Comments
+const commentsContainer = document.getElementById('commentsContainer');
+let lastCommentId = {{ comments|last ? comments|last.id : 0 }};
+
+document.getElementById('commentForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const content = document.getElementById('commentContent').value.trim();
+    if (!content) return;
+    
+    const res = await fetch('{{ path('inventory_comment', {id: inventory.id}) }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({content})
+    });
+    
+    if (res.ok) {
+        document.getElementById('commentContent').value = '';
+        pollComments();
+    }
+});
+
+async function pollComments() {
+    const res = await fetch(`{{ path('inventory_comments_poll', {id: inventory.id}) }}?lastId=${lastCommentId}`);
+    const comments = await res.json();
+    
+    comments.forEach(c => {
+        if (c.id > lastCommentId) {
+            lastCommentId = c.id;
+            const html = `
+                <div class="d-flex mb-3" data-comment-id="${c.id}">
+                    <img src="https://via.placeholder.com/40" class="rounded-circle me-3" width="40" height="40" alt="">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <strong>${c.author}</strong>
+                            <small class="text-muted">${c.createdAt}</small>
+                        </div>
+                        <div class="mt-1">${c.content}</div>
+                    </div>
+                </div>
+            `;
+            commentsContainer.insertAdjacentHTML('beforeend', html);
+        }
+    });
+}
+
+// Poll every 3 seconds
+setInterval(pollComments, 3000);
+</script>
+{% endif %}
+{% endblock %}

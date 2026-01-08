@@ -1,0 +1,128 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ item.customId }} - {{ inventory.title }} - {{ parent() }}{% endblock %}
+
+{% block body %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ path('app_home') }}">Home</a></li>
+        <li class="breadcrumb-item"><a href="{{ path('inventory_show', {id: inventory.id}) }}">{{ inventory.title }}</a></li>
+        <li class="breadcrumb-item active">{{ item.customId }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span><code class="fs-5">{{ item.customId }}</code></span>
+                {% if can_edit %}
+                <a href="{{ path('item_edit', {inventoryId: inventory.id, id: item.id}) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>{{ 'common.edit'|trans }}
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% for field in inventory.customFieldConfig %}
+                    {% set value = item.getFieldValue(field.key) %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">{{ field.name }}</label>
+                        {% if field.type == 'text' %}
+                            <div class="border rounded p-2 bg-light">{{ value|nl2br }}</div>
+                        {% elseif field.type == 'bool' %}
+                            {% if value %}
+                                <span class="badge bg-success"><i class="bi bi-check-lg"></i> Yes</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-x"></i> No</span>
+                            {% endif %}
+                        {% elseif field.type == 'link' and value %}
+                            <a href="{{ value }}" target="_blank" class="d-block">
+                                <i class="bi bi-link-45deg me-1"></i>{{ value|slice(0, 50) }}...
+                            </a>
+                        {% elseif field.type == 'number' %}
+                            <span class="fs-5 fw-bold">{{ value }}</span>
+                        {% else %}
+                            <p class="mb-0">{{ value ?? '-' }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer text-muted small">
+                <i class="bi bi-person me-1"></i>Created by {{ item.createdBy.name ?? item.createdBy.email }}
+                <span class="mx-2">·</span>
+                <i class="bi bi-calendar me-1"></i>{{ item.createdAt|date('Y-m-d H:i') }}
+                {% if item.updatedAt != item.createdAt %}
+                <span class="mx-2">·</span>
+                Updated {{ item.updatedAt|date('Y-m-d H:i') }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Like Button -->
+        <div class="card mb-3">
+            <div class="card-body text-center">
+                {% if app.user %}
+                <button class="btn btn-{{ has_liked ? 'danger' : 'outline-danger' }} btn-lg" id="likeBtn" onclick="toggleLike()">
+                    <i class="bi bi-heart{{ has_liked ? '-fill' : '' }}"></i>
+                    <span id="likeCount">{{ item.likeCount }}</span>
+                </button>
+                {% else %}
+                <div class="text-muted">
+                    <i class="bi bi-heart text-danger fs-2"></i>
+                    <p class="mb-0 mt-2">{{ item.likeCount }} {{ 'item.likes'|trans }}</p>
+                    <small><a href="{{ path('app_login') }}">Sign in</a> to like</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_edit %}
+        <div class="card">
+            <div class="card-header">{{ 'common.actions'|trans }}</div>
+            <div class="card-body">
+                <a href="{{ path('item_edit', {inventoryId: inventory.id, id: item.id}) }}" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-pencil me-1"></i>{{ 'item.edit'|trans }}
+                </a>
+                <form action="{{ path('item_delete', {inventoryId: inventory.id, id: item.id}) }}" method="POST"
+                      onsubmit="return confirm('Are you sure?')">
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-trash me-1"></i>{{ 'item.delete'|trans }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if app.user %}
+<script>
+async function toggleLike() {
+    const res = await fetch('{{ path('item_like', {inventoryId: inventory.id, id: item.id}) }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    });
+    const data = await res.json();
+    
+    const btn = document.getElementById('likeBtn');
+    const icon = btn.querySelector('i');
+    
+    if (data.liked) {
+        btn.classList.remove('btn-outline-danger');
+        btn.classList.add('btn-danger');
+        icon.classList.remove('bi-heart');
+        icon.classList.add('bi-heart-fill');
+    } else {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-outline-danger');
+        icon.classList.remove('bi-heart-fill');
+        icon.classList.add('bi-heart');
+    }
+    
+    document.getElementById('likeCount').textContent = data.count;
+}
+</script>
+{% endif %}
+{% endblock %}
