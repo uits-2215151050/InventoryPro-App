@@ -1,4 +1,3 @@
-# Inventory Management App
 # Inventory Management System
 
 A feature-rich, web-based inventory management application built with **Symfony 7** and **MySQL**. This system allows users to create custom inventories with configurable fields and unique ID generation formats, making it adaptable to a wide variety of use cases.
